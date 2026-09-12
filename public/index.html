@@ -1,0 +1,83 @@
+<!DOCTYPE html>
+<html lang="vi">
+<head>
+<meta charset="UTF-8" />
+<meta name="viewport" content="width=device-width, initial-scale=1.0" />
+<title>Server Dashboard</title>
+<link rel="stylesheet" href="style.css" />
+</head>
+<body>
+  <header class="topbar">
+    <h1>🖥️ Server Dashboard</h1>
+    <div class="topbar-right">
+      <span id="hostInfo" class="muted">Đang kết nối...</span>
+      <span id="statusDot" class="status-dot offline" title="Trạng thái kết nối"></span>
+    </div>
+  </header>
+
+  <main class="grid">
+    <section class="card">
+      <h2>CPU</h2>
+      <div class="big-metric">
+        <span id="cpuLoad">--</span><span class="unit">%</span>
+      </div>
+      <canvas id="cpuChart" height="60"></canvas>
+      <div id="cpuCores" class="core-bars"></div>
+      <div class="row">
+        <span class="muted">Nhiệt độ CPU</span>
+        <span id="cpuTemp">--</span>
+      </div>
+      <div class="row">
+        <span class="muted">Model</span>
+        <span id="cpuBrand">--</span>
+      </div>
+    </section>
+
+    <section class="card">
+      <h2>RAM</h2>
+      <div class="big-metric">
+        <span id="memPercent">--</span><span class="unit">%</span>
+      </div>
+      <canvas id="memChart" height="60"></canvas>
+      <div class="row">
+        <span class="muted">Đã dùng</span>
+        <span id="memUsed">--</span>
+      </div>
+      <div class="row">
+        <span class="muted">Tổng</span>
+        <span id="memTotal">--</span>
+      </div>
+      <div class="row">
+        <span class="muted">Swap</span>
+        <span id="swapUsed">--</span>
+      </div>
+    </section>
+
+    <section class="card">
+      <h2>Ổ đĩa</h2>
+      <div id="disks" class="disk-list"></div>
+    </section>
+
+    <section class="card">
+      <h2>Mạng</h2>
+      <div id="network" class="net-list"></div>
+    </section>
+
+    <section class="card wide">
+      <h2>Tiến trình dùng CPU nhiều nhất</h2>
+      <table class="proc-table">
+        <thead>
+          <tr><th>PID</th><th>Tên</th><th>CPU %</th><th>MEM %</th></tr>
+        </thead>
+        <tbody id="procBody"></tbody>
+      </table>
+    </section>
+  </main>
+
+  <footer class="footer muted">
+    Cập nhật lúc <span id="lastUpdate">--</span> · Uptime: <span id="uptime">--</span>
+  </footer>
+
+  <script src="app.js"></script>
+</body>
+</html>
