@@ -7,108 +7,212 @@
 <link rel="stylesheet" href="style.css" />
 </head>
 <body>
-  <header class="topbar">
-    <h1>🖥️ Server Dashboard</h1>
-    <div class="topbar-right">
-      <span id="hostInfo" class="muted">Đang kết nối...</span>
-      <span id="statusDot" class="status-dot offline" title="Trạng thái kết nối"></span>
-    </div>
-  </header>
+  <div class="app">
+    <header class="topbar">
+      <div class="brand">
+        <span class="brand-mark">
+          <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.6" stroke-linecap="round">
+            <rect x="3" y="4" width="18" height="6.5" rx="2" />
+            <rect x="3" y="13.5" width="18" height="6.5" rx="2" />
+            <circle cx="7" cy="7.25" r="1" fill="currentColor" stroke="none" />
+            <circle cx="7" cy="16.75" r="1" fill="currentColor" stroke="none" />
+            <path d="M12 7.25h6M12 16.75h6" />
+          </svg>
+        </span>
+        <span class="brand-text">
+          <span class="brand-title">Server Dashboard</span>
+          <span class="brand-sub" id="hostInfo">đang kết nối…</span>
+        </span>
+      </div>
 
-  <nav class="tabs">
-    <button class="tab-btn active" data-tab="live">Trực tiếp</button>
-    <button class="tab-btn" data-tab="history">Lịch sử</button>
-  </nav>
+      <div class="topbar-meta">
+        <span class="chip">
+          <span class="chip-label">Uptime</span>
+          <span class="chip-value num" id="uptime">--</span>
+        </span>
+        <span class="chip">
+          <span class="chip-label">Cập nhật</span>
+          <span class="chip-value num" id="lastUpdate">--</span>
+        </span>
+        <span class="status-pill offline" id="statusPill">
+          <span class="status-dot"></span>
+          <span id="statusText">Mất kết nối</span>
+        </span>
+      </div>
+    </header>
 
-  <main id="tab-live" class="grid">
-    <section class="card">
-      <h2>CPU</h2>
-      <div class="big-metric">
-        <span id="cpuLoad">--</span><span class="unit">%</span>
-      </div>
-      <canvas id="cpuChart" height="60"></canvas>
-      <div id="cpuCores" class="core-bars"></div>
-      <div class="row">
-        <span class="muted">Nhiệt độ CPU</span>
-        <span id="cpuTemp">--</span>
-      </div>
-      <canvas id="tempChart" height="40"></canvas>
-      <div class="row">
-        <span class="muted">Model</span>
-        <span id="cpuBrand">--</span>
-      </div>
-    </section>
+    <nav class="tabs">
+      <button class="tab-btn active" data-tab="live">Trực tiếp</button>
+      <button class="tab-btn" data-tab="history">Lịch sử</button>
+    </nav>
 
-    <section class="card">
-      <h2>RAM</h2>
-      <div class="big-metric">
-        <span id="memPercent">--</span><span class="unit">%</span>
-      </div>
-      <canvas id="memChart" height="60"></canvas>
-      <div class="row">
-        <span class="muted">Đã dùng</span>
-        <span id="memUsed">--</span>
-      </div>
-      <div class="row">
-        <span class="muted">Tổng</span>
-        <span id="memTotal">--</span>
-      </div>
-      <div class="row">
-        <span class="muted">Swap</span>
-        <span id="swapUsed">--</span>
-      </div>
-    </section>
-
-    <section class="card">
-      <h2>Ổ đĩa</h2>
-      <div id="disks" class="disk-list"></div>
-    </section>
-
-    <section class="card">
-      <h2>Mạng</h2>
-      <div id="network" class="net-list"></div>
-    </section>
-  </main>
-
-  <main id="tab-history" class="grid" hidden>
-    <section class="card wide">
-      <div class="history-header">
-        <h2>Lịch sử</h2>
-        <div class="range-picker">
-          <button class="range-btn active" data-range="hour">Giờ (60 phút gần nhất)</button>
-          <button class="range-btn" data-range="day">Ngày (24 giờ gần nhất)</button>
-          <button class="range-btn" data-range="month">Tháng (30 ngày gần nhất)</button>
-          <button class="range-btn" data-range="year">Năm (12 tháng gần nhất)</button>
+    <main id="tab-live" class="grid">
+      <section class="card">
+        <div class="card-head">
+          <h2><i class="bullet blue"></i>CPU</h2>
+          <span class="badge" id="cpuBadge">--</span>
         </div>
-      </div>
 
-      <h3>CPU (%)</h3>
-      <div id="histCpuStats" class="chart-stats"></div>
-      <div class="chart-wrap">
-        <canvas id="histCpuChart" height="90"></canvas>
-      </div>
-      <div id="histCpuLabels" class="chart-labels"></div>
+        <div class="metric-row">
+          <div class="gauge">
+            <svg viewBox="0 0 120 120">
+              <circle class="gauge-track" cx="60" cy="60" r="52" />
+              <circle class="gauge-arc" id="cpuGauge" cx="60" cy="60" r="52" />
+            </svg>
+            <span class="gauge-center">
+              <span class="gauge-value num" id="cpuLoad">--</span>
+              <span class="gauge-unit">%</span>
+            </span>
+          </div>
 
-      <h3>RAM (%)</h3>
-      <div id="histMemStats" class="chart-stats"></div>
-      <div class="chart-wrap">
-        <canvas id="histMemChart" height="90"></canvas>
-      </div>
-      <div id="histMemLabels" class="chart-labels"></div>
+          <div class="metric-side">
+            <span class="side-title">Tải từng luồng</span>
+            <div id="cpuCores" class="core-bars"></div>
+          </div>
+        </div>
 
-      <h3>Nhiệt độ CPU (°C)</h3>
-      <div id="histTempStats" class="chart-stats"></div>
-      <div class="chart-wrap">
-        <canvas id="histTempChart" height="90"></canvas>
-      </div>
-      <div id="histTempLabels" class="chart-labels"></div>
-    </section>
-    <div id="chartTooltip" class="chart-tooltip" hidden></div>
-  </main>
+        <div class="spark">
+          <canvas id="cpuChart" height="52"></canvas>
+        </div>
 
-  <footer class="footer muted">
-    Cập nhật lúc <span id="lastUpdate">--</span> · Uptime: <span id="uptime">--</span>
-  </footer>
+        <dl class="meta">
+          <div><dt>Model</dt><dd id="cpuBrand">--</dd></div>
+          <div><dt>Xung nhịp</dt><dd class="num" id="cpuSpeed">--</dd></div>
+        </dl>
+      </section>
+
+      <section class="card">
+        <div class="card-head">
+          <h2><i class="bullet violet"></i>RAM</h2>
+          <span class="badge" id="memBadge">--</span>
+        </div>
+
+        <div class="metric-row">
+          <div class="gauge">
+            <svg viewBox="0 0 120 120">
+              <circle class="gauge-track" cx="60" cy="60" r="52" />
+              <circle class="gauge-arc" id="memGauge" cx="60" cy="60" r="52" />
+            </svg>
+            <span class="gauge-center">
+              <span class="gauge-value num" id="memPercent">--</span>
+              <span class="gauge-unit">%</span>
+            </span>
+          </div>
+
+          <div class="metric-side">
+            <span class="side-title">Bộ nhớ</span>
+            <dl class="meta tight">
+              <div><dt>Đã dùng</dt><dd class="num" id="memUsed">--</dd></div>
+              <div><dt>Còn trống</dt><dd class="num" id="memFree">--</dd></div>
+              <div><dt>Tổng</dt><dd class="num" id="memTotal">--</dd></div>
+            </dl>
+          </div>
+        </div>
+
+        <div class="spark">
+          <canvas id="memChart" height="52"></canvas>
+        </div>
+
+        <div class="swap">
+          <div class="swap-head">
+            <span>Swap</span>
+            <span class="num" id="swapUsed">--</span>
+          </div>
+          <div class="track"><div class="track-fill violet" id="swapBar" style="width:0%"></div></div>
+        </div>
+      </section>
+
+      <section class="card">
+        <div class="card-head">
+          <h2><i class="bullet amber"></i>Nhiệt độ</h2>
+          <span class="badge" id="tempBadge">--</span>
+        </div>
+
+        <div class="metric-row">
+          <div class="gauge">
+            <svg viewBox="0 0 120 120">
+              <circle class="gauge-track" cx="60" cy="60" r="52" />
+              <circle class="gauge-arc" id="tempGauge" cx="60" cy="60" r="52" />
+            </svg>
+            <span class="gauge-center">
+              <span class="gauge-value num" id="cpuTemp">--</span>
+              <span class="gauge-unit">°C</span>
+            </span>
+          </div>
+
+          <div class="metric-side">
+            <span class="side-title">Cảm biến CPU</span>
+            <dl class="meta tight">
+              <div><dt>Cao nhất</dt><dd class="num" id="tempMax">--</dd></div>
+              <div><dt>Ngưỡng an toàn</dt><dd class="num">&lt; 80 °C</dd></div>
+            </dl>
+          </div>
+        </div>
+
+        <div class="spark">
+          <canvas id="tempChart" height="52"></canvas>
+        </div>
+      </section>
+
+      <section class="card">
+        <div class="card-head">
+          <h2><i class="bullet green"></i>Ổ đĩa</h2>
+        </div>
+        <div id="disks" class="disk-list"></div>
+      </section>
+
+      <section class="card">
+        <div class="card-head">
+          <h2><i class="bullet cyan"></i>Mạng</h2>
+        </div>
+        <div id="network" class="net-list"></div>
+      </section>
+    </main>
+
+    <main id="tab-history" class="grid" hidden>
+      <section class="card wide">
+        <div class="card-head wrap">
+          <h2><i class="bullet blue"></i>Lịch sử</h2>
+          <div class="segmented">
+            <button class="seg-btn active" data-range="hour">Giờ</button>
+            <button class="seg-btn" data-range="day">Ngày</button>
+            <button class="seg-btn" data-range="month">Tháng</button>
+            <button class="seg-btn" data-range="year">Năm</button>
+          </div>
+        </div>
+        <p class="range-hint" id="rangeHint">60 phút gần nhất · mỗi điểm là trung bình 1 phút</p>
+
+        <div class="hist-block">
+          <div class="hist-head">
+            <h3>CPU <span class="unit-tag">%</span></h3>
+            <div id="histCpuStats" class="chart-stats"></div>
+          </div>
+          <div class="chart-wrap"><canvas id="histCpuChart" height="132"></canvas></div>
+          <div id="histCpuLabels" class="chart-labels"></div>
+        </div>
+
+        <div class="hist-block">
+          <div class="hist-head">
+            <h3>RAM <span class="unit-tag">%</span></h3>
+            <div id="histMemStats" class="chart-stats"></div>
+          </div>
+          <div class="chart-wrap"><canvas id="histMemChart" height="132"></canvas></div>
+          <div id="histMemLabels" class="chart-labels"></div>
+        </div>
+
+        <div class="hist-block">
+          <div class="hist-head">
+            <h3>Nhiệt độ CPU <span class="unit-tag">°C</span></h3>
+            <div id="histTempStats" class="chart-stats"></div>
+          </div>
+          <div class="chart-wrap"><canvas id="histTempChart" height="132"></canvas></div>
+          <div id="histTempLabels" class="chart-labels"></div>
+        </div>
+      </section>
+    </main>
+  </div>
+
+  <div id="chartTooltip" class="chart-tooltip" hidden></div>
 
   <script src="app.js"></script>
 </body>
