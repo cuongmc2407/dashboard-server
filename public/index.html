@@ -99,17 +99,27 @@
       </div>
 
       <h3>CPU (%)</h3>
-      <canvas id="histCpuChart" height="90"></canvas>
+      <div id="histCpuStats" class="chart-stats"></div>
+      <div class="chart-wrap">
+        <canvas id="histCpuChart" height="90"></canvas>
+      </div>
       <div id="histCpuLabels" class="chart-labels"></div>
 
       <h3>RAM (%)</h3>
-      <canvas id="histMemChart" height="90"></canvas>
+      <div id="histMemStats" class="chart-stats"></div>
+      <div class="chart-wrap">
+        <canvas id="histMemChart" height="90"></canvas>
+      </div>
       <div id="histMemLabels" class="chart-labels"></div>
 
       <h3>Nhiệt độ CPU (°C)</h3>
-      <canvas id="histTempChart" height="90"></canvas>
+      <div id="histTempStats" class="chart-stats"></div>
+      <div class="chart-wrap">
+        <canvas id="histTempChart" height="90"></canvas>
+      </div>
       <div id="histTempLabels" class="chart-labels"></div>
     </section>
+    <div id="chartTooltip" class="chart-tooltip" hidden></div>
   </main>
 
   <footer class="footer muted">

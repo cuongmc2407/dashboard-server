@@ -109,6 +109,36 @@ body {
   margin-top: -4px;
 }
 
+.chart-stats {
+  font-size: 0.8rem;
+  color: var(--text);
+  margin-bottom: 4px;
+  min-height: 1.1em;
+}
+
+.chart-stats b { color: var(--accent); font-weight: 600; }
+
+.chart-wrap {
+  position: relative;
+  cursor: crosshair;
+}
+
+.chart-tooltip {
+  position: fixed;
+  z-index: 50;
+  background: #0b0d12;
+  border: 1px solid var(--border);
+  border-radius: 6px;
+  padding: 6px 10px;
+  font-size: 0.78rem;
+  line-height: 1.4;
+  pointer-events: none;
+  white-space: nowrap;
+}
+
+.chart-tooltip .tt-time { color: var(--muted); }
+.chart-tooltip .tt-value { font-weight: 700; }
+
 .grid {
   display: grid;
   grid-template-columns: repeat(auto-fit, minmax(280px, 1fr));

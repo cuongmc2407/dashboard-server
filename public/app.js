@@ -30,7 +30,14 @@ function fmtUptime(sec) {
 }
 
 function drawChart(canvas, values, opts = {}) {
-  const { min, max, color = '#4f8cff', fillColor = 'rgba(79,140,255,0.15)', slots = values.length } = opts;
+  const {
+    min,
+    max,
+    color = '#4f8cff',
+    fillColor = 'rgba(79,140,255,0.15)',
+    slots = values.length,
+    highlightIndex = null,
+  } = opts;
   const ctx = canvas.getContext('2d');
   const dpr = window.devicePixelRatio || 1;
   const w = canvas.clientWidth;
@@ -89,6 +96,31 @@ function drawChart(canvas, values, opts = {}) {
     ctx.closePath();
     ctx.fillStyle = fillColor;
     ctx.fill();
+  }
+
+  if (highlightIndex != null && highlightIndex >= 0 && highlightIndex < values.length) {
+    const val = values[highlightIndex];
+    if (val != null) {
+      const x = (offset + highlightIndex) * stepX;
+      const y = h - ((val - lo) / (hi - lo)) * h;
+
+      ctx.save();
+      ctx.strokeStyle = 'rgba(255,255,255,0.35)';
+      ctx.setLineDash([3, 3]);
+      ctx.beginPath();
+      ctx.moveTo(x, 0);
+      ctx.lineTo(x, h);
+      ctx.stroke();
+      ctx.restore();
+
+      ctx.beginPath();
+      ctx.arc(x, y, 4, 0, Math.PI * 2);
+      ctx.fillStyle = color;
+      ctx.fill();
+      ctx.lineWidth = 1.5;
+      ctx.strokeStyle = '#fff';
+      ctx.stroke();
+    }
   }
 }
 
@@ -223,6 +255,81 @@ function renderLabels(el, points, range) {
   });
 }
 
+function renderStats(el, values, unit) {
+  const valid = values.filter((v) => v != null);
+  if (!valid.length) {
+    el.innerHTML = '';
+    return;
+  }
+  const last = valid[valid.length - 1];
+  const min = Math.min(...valid);
+  const max = Math.max(...valid);
+  const avg = valid.reduce((a, b) => a + b, 0) / valid.length;
+  el.innerHTML =
+    `Hiện tại: <b>${last.toFixed(1)}${unit}</b> · Trung bình: <b>${avg.toFixed(1)}${unit}</b> · ` +
+    `Thấp nhất: <b>${min.toFixed(1)}${unit}</b> · Cao nhất: <b>${max.toFixed(1)}${unit}</b>`;
+}
+
+const TOOLTIP_TIME_FMT = {
+  hour: (t) => new Date(t).toLocaleTimeString('vi-VN', { hour: '2-digit', minute: '2-digit' }),
+  day: (t) => new Date(t).toLocaleString('vi-VN', { hour: '2-digit', minute: '2-digit', day: '2-digit', month: '2-digit' }),
+  month: (t) => new Date(t).toLocaleDateString('vi-VN', { day: '2-digit', month: '2-digit', year: 'numeric' }),
+  year: (t) => new Date(t).toLocaleDateString('vi-VN', { month: 'long', year: 'numeric' }),
+};
+
+const chartTooltip = document.getElementById('chartTooltip');
+
+function hideChartTooltip() {
+  chartTooltip.hidden = true;
+}
+
+function bindChartHover(canvas, unit) {
+  if (canvas._hoverBound) return;
+  canvas._hoverBound = true;
+
+  canvas.addEventListener('mousemove', (e) => {
+    const values = canvas._histValues;
+    const points = canvas._histPoints;
+    if (!values || !points || !points.length) return;
+
+    const rect = canvas.getBoundingClientRect();
+    const x = e.clientX - rect.left;
+    const idx = Math.min(Math.max(Math.round((x / rect.width) * (values.length - 1)), 0), values.length - 1);
+
+    drawChart(canvas, values, { ...canvas._histOpts, highlightIndex: idx });
+
+    const val = values[idx];
+    const p = points[idx];
+    const timeFmt = TOOLTIP_TIME_FMT[currentRange];
+    chartTooltip.innerHTML = `<div class="tt-time">${timeFmt(p.t)}</div><div class="tt-value">${
+      val != null ? val.toFixed(1) + unit : 'Không có dữ liệu'
+    }</div>`;
+    chartTooltip.hidden = false;
+
+    const ttRect = chartTooltip.getBoundingClientRect();
+    let left = e.clientX + 14;
+    let top = e.clientY - ttRect.height - 14;
+    if (left + ttRect.width > window.innerWidth) left = e.clientX - ttRect.width - 14;
+    if (top < 0) top = e.clientY + 14;
+    chartTooltip.style.left = `${left}px`;
+    chartTooltip.style.top = `${top}px`;
+  });
+
+  canvas.addEventListener('mouseleave', () => {
+    hideChartTooltip();
+    if (canvas._histValues) drawChart(canvas, canvas._histValues, canvas._histOpts);
+  });
+}
+
+function renderHistoryChart(canvas, points, key, unit, opts) {
+  const values = points.map((p) => p[key]);
+  drawChart(canvas, values, opts);
+  canvas._histValues = values;
+  canvas._histPoints = points;
+  canvas._histOpts = opts;
+  bindChartHover(canvas, unit);
+}
+
 async function loadHistory(range) {
   currentRange = range;
   document.querySelectorAll('#tab-history .range-btn').forEach((btn) => {
@@ -238,16 +345,22 @@ async function loadHistory(range) {
     return;
   }
 
+  hideChartTooltip();
+
   const cpuVals = points.map((p) => p.cpu);
   const memVals = points.map((p) => p.mem);
   const tempVals = points.map((p) => p.temp);
 
-  drawChart(document.getElementById('histCpuChart'), cpuVals, { min: 0, max: 100 });
-  drawChart(document.getElementById('histMemChart'), memVals, { min: 0, max: 100 });
-  drawChart(document.getElementById('histTempChart'), tempVals, {
+  renderHistoryChart(document.getElementById('histCpuChart'), points, 'cpu', '%', { min: 0, max: 100 });
+  renderHistoryChart(document.getElementById('histMemChart'), points, 'mem', '%', { min: 0, max: 100 });
+  renderHistoryChart(document.getElementById('histTempChart'), points, 'temp', '°C', {
     color: '#e8b339',
     fillColor: 'rgba(232,179,57,0.15)',
   });
+
+  renderStats(document.getElementById('histCpuStats'), cpuVals, '%');
+  renderStats(document.getElementById('histMemStats'), memVals, '%');
+  renderStats(document.getElementById('histTempStats'), tempVals, '°C');
 
   renderLabels(document.getElementById('histCpuLabels'), points, range);
   renderLabels(document.getElementById('histMemLabels'), points, range);
