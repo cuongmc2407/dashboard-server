@@ -49,7 +49,7 @@ if (DASHBOARD_USER && DASHBOARD_PASS) {
 app.use(express.static(path.join(__dirname, 'public')));
 
 async function collectStats() {
-  const [cpuLoad, cpuTemp, mem, fsSize, netStats, time, cpu, processes] = await Promise.all([
+  const [cpuLoad, cpuTemp, mem, fsSize, netStats, time, cpu] = await Promise.all([
     si.currentLoad(),
     si.cpuTemperature().catch(() => ({ main: null, cores: [], max: null })),
     si.mem(),
@@ -57,18 +57,7 @@ async function collectStats() {
     si.networkStats(),
     si.time(),
     si.cpu(),
-    si.processes(),
   ]);
-
-  const mapProcess = (p) => ({
-    pid: p.pid,
-    name: p.name,
-    cpu: Number(p.cpu.toFixed(1)),
-    mem: Number(p.mem.toFixed(1)),
-  });
-
-  const topProcessesByCpu = [...processes.list].sort((a, b) => b.cpu - a.cpu).slice(0, 8).map(mapProcess);
-  const topProcessesByMem = [...processes.list].sort((a, b) => b.mem - a.mem).slice(0, 8).map(mapProcess);
 
   return {
     timestamp: Date.now(),
@@ -104,8 +93,6 @@ async function collectStats() {
       txSec: n.tx_sec || 0,
     })),
     uptimeSec: time.uptime,
-    topProcessesByCpu,
-    topProcessesByMem,
   };
 }
 

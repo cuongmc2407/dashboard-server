@@ -232,8 +232,4 @@ canvas { width: 100%; display: block; margin: 8px 0; }
 }
 .net-item:first-child { border-top: none; padding-top: 0; }
 
-.proc-table { width: 100%; border-collapse: collapse; font-size: 0.85rem; }
-.proc-table th, .proc-table td { text-align: left; padding: 6px 8px; border-bottom: 1px solid var(--border); }
-.proc-table th { color: var(--muted); font-weight: 600; }
-
 .footer { padding: 14px 24px; font-size: 0.8rem; }
