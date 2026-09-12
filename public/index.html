@@ -70,7 +70,13 @@
     </section>
 
     <section class="card wide">
-      <h2>Tiến trình dùng CPU nhiều nhất</h2>
+      <div class="history-header">
+        <h2 id="procTitle">Tiến trình dùng CPU nhiều nhất</h2>
+        <div class="range-picker">
+          <button class="range-btn proc-sort-btn active" data-sort="cpu">CPU nhiều nhất</button>
+          <button class="range-btn proc-sort-btn" data-sort="mem">RAM nhiều nhất</button>
+        </div>
+      </div>
       <table class="proc-table">
         <thead>
           <tr><th>PID</th><th>Tên</th><th>CPU %</th><th>MEM %</th></tr>

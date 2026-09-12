@@ -167,15 +167,37 @@ function render(stats) {
     netEl.appendChild(item);
   });
 
-  // Processes
+  lastStats = stats;
+  renderProcessTable();
+}
+
+// ----- Bang tien trinh: chon sap xep theo CPU hoac RAM -----
+
+let lastStats = null;
+let processSort = 'cpu';
+
+function renderProcessTable() {
+  if (!lastStats) return;
+  const list = processSort === 'mem' ? lastStats.topProcessesByMem : lastStats.topProcessesByCpu;
+  document.getElementById('procTitle').textContent =
+    processSort === 'mem' ? 'Tiến trình dùng RAM nhiều nhất' : 'Tiến trình dùng CPU nhiều nhất';
+
   const procBody = document.getElementById('procBody');
   procBody.innerHTML = '';
-  stats.topProcesses.forEach((p) => {
+  list.forEach((p) => {
     const tr = document.createElement('tr');
     tr.innerHTML = `<td>${p.pid}</td><td>${p.name}</td><td>${p.cpu}%</td><td>${p.mem}%</td>`;
     procBody.appendChild(tr);
   });
 }
+
+document.querySelectorAll('.proc-sort-btn').forEach((btn) => {
+  btn.addEventListener('click', () => {
+    processSort = btn.dataset.sort;
+    document.querySelectorAll('.proc-sort-btn').forEach((b) => b.classList.toggle('active', b === btn));
+    renderProcessTable();
+  });
+});
 
 // ----- Tab Lich su -----
 
@@ -203,7 +225,7 @@ function renderLabels(el, points, range) {
 
 async function loadHistory(range) {
   currentRange = range;
-  document.querySelectorAll('.range-btn').forEach((btn) => {
+  document.querySelectorAll('#tab-history .range-btn').forEach((btn) => {
     btn.classList.toggle('active', btn.dataset.range === range);
   });
 
@@ -250,7 +272,7 @@ document.querySelectorAll('.tab-btn').forEach((btn) => {
   });
 });
 
-document.querySelectorAll('.range-btn').forEach((btn) => {
+document.querySelectorAll('#tab-history .range-btn').forEach((btn) => {
   btn.addEventListener('click', () => loadHistory(btn.dataset.range));
 });
 

@@ -60,15 +60,15 @@ async function collectStats() {
     si.processes(),
   ]);
 
-  const topProcesses = [...processes.list]
-    .sort((a, b) => b.cpu - a.cpu)
-    .slice(0, 8)
-    .map((p) => ({
-      pid: p.pid,
-      name: p.name,
-      cpu: Number(p.cpu.toFixed(1)),
-      mem: Number(p.mem.toFixed(1)),
-    }));
+  const mapProcess = (p) => ({
+    pid: p.pid,
+    name: p.name,
+    cpu: Number(p.cpu.toFixed(1)),
+    mem: Number(p.mem.toFixed(1)),
+  });
+
+  const topProcessesByCpu = [...processes.list].sort((a, b) => b.cpu - a.cpu).slice(0, 8).map(mapProcess);
+  const topProcessesByMem = [...processes.list].sort((a, b) => b.mem - a.mem).slice(0, 8).map(mapProcess);
 
   return {
     timestamp: Date.now(),
@@ -104,7 +104,8 @@ async function collectStats() {
       txSec: n.tx_sec || 0,
     })),
     uptimeSec: time.uptime,
-    topProcesses,
+    topProcessesByCpu,
+    topProcessesByMem,
   };
 }
 
