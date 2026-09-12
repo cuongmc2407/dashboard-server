@@ -15,7 +15,12 @@
     </div>
   </header>
 
-  <main class="grid">
+  <nav class="tabs">
+    <button class="tab-btn active" data-tab="live">Trực tiếp</button>
+    <button class="tab-btn" data-tab="history">Lịch sử</button>
+  </nav>
+
+  <main id="tab-live" class="grid">
     <section class="card">
       <h2>CPU</h2>
       <div class="big-metric">
@@ -27,6 +32,7 @@
         <span class="muted">Nhiệt độ CPU</span>
         <span id="cpuTemp">--</span>
       </div>
+      <canvas id="tempChart" height="40"></canvas>
       <div class="row">
         <span class="muted">Model</span>
         <span id="cpuBrand">--</span>
@@ -71,6 +77,32 @@
         </thead>
         <tbody id="procBody"></tbody>
       </table>
+    </section>
+  </main>
+
+  <main id="tab-history" class="grid" hidden>
+    <section class="card wide">
+      <div class="history-header">
+        <h2>Lịch sử</h2>
+        <div class="range-picker">
+          <button class="range-btn active" data-range="hour">Giờ (60 phút gần nhất)</button>
+          <button class="range-btn" data-range="day">Ngày (24 giờ gần nhất)</button>
+          <button class="range-btn" data-range="month">Tháng (30 ngày gần nhất)</button>
+          <button class="range-btn" data-range="year">Năm (12 tháng gần nhất)</button>
+        </div>
+      </div>
+
+      <h3>CPU (%)</h3>
+      <canvas id="histCpuChart" height="90"></canvas>
+      <div id="histCpuLabels" class="chart-labels"></div>
+
+      <h3>RAM (%)</h3>
+      <canvas id="histMemChart" height="90"></canvas>
+      <div id="histMemLabels" class="chart-labels"></div>
+
+      <h3>Nhiệt độ CPU (°C)</h3>
+      <canvas id="histTempChart" height="90"></canvas>
+      <div id="histTempLabels" class="chart-labels"></div>
     </section>
   </main>
 

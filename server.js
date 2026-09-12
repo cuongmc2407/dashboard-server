@@ -4,6 +4,7 @@ const http = require('http');
 const express = require('express');
 const si = require('systeminformation');
 const { WebSocketServer } = require('ws');
+const history = require('./history');
 
 // Tiny .env loader (khong can them dependency dotenv)
 (function loadEnv() {
@@ -115,6 +116,7 @@ let latestStats = null;
 async function pollLoop() {
   try {
     latestStats = await collectStats();
+    history.recordSample(latestStats);
     const payload = JSON.stringify(latestStats);
     wss.clients.forEach((client) => {
       if (client.readyState === 1) client.send(payload);
@@ -125,6 +127,7 @@ async function pollLoop() {
     setTimeout(pollLoop, POLL_INTERVAL_MS);
   }
 }
+history.init();
 pollLoop();
 
 wss.on('connection', (ws) => {
@@ -133,6 +136,11 @@ wss.on('connection', (ws) => {
 
 app.get('/api/stats', async (req, res) => {
   res.json(latestStats || (await collectStats()));
+});
+
+app.get('/api/history', (req, res) => {
+  const range = ['hour', 'day', 'month', 'year'].includes(req.query.range) ? req.query.range : 'hour';
+  res.json(history.getRange(range));
 });
 
 server.listen(PORT, () => {

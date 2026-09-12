@@ -3,6 +3,7 @@ const hostInfo = document.getElementById('hostInfo');
 
 const cpuHistory = [];
 const memHistory = [];
+const tempHistory = [];
 const HISTORY_LEN = 60;
 
 function fmtBytes(bytes) {
@@ -28,7 +29,8 @@ function fmtUptime(sec) {
   return `${d}d ${h}h ${m}m`;
 }
 
-function drawSparkline(canvas, data, max) {
+function drawChart(canvas, values, opts = {}) {
+  const { min, max, color = '#4f8cff', fillColor = 'rgba(79,140,255,0.15)', slots = values.length } = opts;
   const ctx = canvas.getContext('2d');
   const dpr = window.devicePixelRatio || 1;
   const w = canvas.clientWidth;
@@ -38,27 +40,56 @@ function drawSparkline(canvas, data, max) {
   ctx.scale(dpr, dpr);
   ctx.clearRect(0, 0, w, h);
 
-  if (data.length < 2) return;
+  const valid = values.filter((v) => v != null);
+  if (valid.length < 2 || slots < 2) return;
 
-  const stepX = w / (HISTORY_LEN - 1);
-  const offset = HISTORY_LEN - data.length;
+  let lo = min;
+  let hi = max;
+  if (lo == null || hi == null) {
+    lo = Math.min(...valid);
+    hi = Math.max(...valid);
+    if (lo === hi) {
+      lo -= 1;
+      hi += 1;
+    }
+    const pad = (hi - lo) * 0.1;
+    lo -= pad;
+    hi += pad;
+  }
+
+  const stepX = w / (slots - 1);
+  const offset = slots - values.length;
 
   ctx.beginPath();
-  data.forEach((val, i) => {
+  let started = false;
+  let lastX = null;
+  values.forEach((val, i) => {
     const x = (offset + i) * stepX;
-    const y = h - (val / max) * h;
-    if (i === 0) ctx.moveTo(x, y);
-    else ctx.lineTo(x, y);
+    if (val == null) {
+      started = false;
+      return;
+    }
+    const y = h - ((val - lo) / (hi - lo)) * h;
+    if (!started) {
+      ctx.moveTo(x, y);
+      started = true;
+    } else {
+      ctx.lineTo(x, y);
+    }
+    lastX = x;
   });
-  ctx.strokeStyle = '#4f8cff';
+  ctx.strokeStyle = color;
   ctx.lineWidth = 2;
   ctx.stroke();
 
-  ctx.lineTo((offset + data.length - 1) * stepX, h);
-  ctx.lineTo(offset * stepX, h);
-  ctx.closePath();
-  ctx.fillStyle = 'rgba(79,140,255,0.15)';
-  ctx.fill();
+  if (lastX != null) {
+    const firstX = offset * stepX + values.findIndex((v) => v != null) * stepX;
+    ctx.lineTo(lastX, h);
+    ctx.lineTo(firstX, h);
+    ctx.closePath();
+    ctx.fillStyle = fillColor;
+    ctx.fill();
+  }
 }
 
 function pushHistory(arr, val) {
@@ -82,7 +113,14 @@ function render(stats) {
   document.getElementById('cpuTemp').textContent = stats.cpu.temperature != null ? `${stats.cpu.temperature.toFixed(1)} °C` : 'N/A';
 
   pushHistory(cpuHistory, stats.cpu.loadOverall);
-  drawSparkline(document.getElementById('cpuChart'), cpuHistory, 100);
+  drawChart(document.getElementById('cpuChart'), cpuHistory, { min: 0, max: 100, slots: HISTORY_LEN });
+
+  pushHistory(tempHistory, stats.cpu.temperature);
+  drawChart(document.getElementById('tempChart'), tempHistory, {
+    slots: HISTORY_LEN,
+    color: '#e8b339',
+    fillColor: 'rgba(232,179,57,0.15)',
+  });
 
   const coresEl = document.getElementById('cpuCores');
   coresEl.innerHTML = '';
@@ -103,7 +141,7 @@ function render(stats) {
   document.getElementById('swapUsed').textContent = `${fmtBytes(stats.memory.swapUsed)} / ${fmtBytes(stats.memory.swapTotal)}`;
 
   pushHistory(memHistory, stats.memory.usedPercent);
-  drawSparkline(document.getElementById('memChart'), memHistory, 100);
+  drawChart(document.getElementById('memChart'), memHistory, { min: 0, max: 100, slots: HISTORY_LEN });
 
   // Disks
   const disksEl = document.getElementById('disks');
@@ -138,6 +176,87 @@ function render(stats) {
     procBody.appendChild(tr);
   });
 }
+
+// ----- Tab Lich su -----
+
+let currentRange = 'hour';
+let historyTabVisible = false;
+
+const RANGE_LABEL_FMT = {
+  hour: (t) => new Date(t).toLocaleTimeString('vi-VN', { hour: '2-digit', minute: '2-digit' }),
+  day: (t) => new Date(t).toLocaleTimeString('vi-VN', { hour: '2-digit', minute: '2-digit' }),
+  month: (t) => new Date(t).toLocaleDateString('vi-VN', { day: '2-digit', month: '2-digit' }),
+  year: (t) => new Date(t).toLocaleDateString('vi-VN', { month: '2-digit', year: 'numeric' }),
+};
+
+function renderLabels(el, points, range) {
+  el.innerHTML = '';
+  if (!points.length) return;
+  const fmt = RANGE_LABEL_FMT[range];
+  const idxs = [0, Math.floor((points.length - 1) / 2), points.length - 1];
+  [...new Set(idxs)].forEach((i) => {
+    const span = document.createElement('span');
+    span.textContent = fmt(points[i].t);
+    el.appendChild(span);
+  });
+}
+
+async function loadHistory(range) {
+  currentRange = range;
+  document.querySelectorAll('.range-btn').forEach((btn) => {
+    btn.classList.toggle('active', btn.dataset.range === range);
+  });
+
+  let points = [];
+  try {
+    const res = await fetch(`/api/history?range=${range}`);
+    points = await res.json();
+  } catch (e) {
+    console.error('Khong tai duoc lich su', e);
+    return;
+  }
+
+  const cpuVals = points.map((p) => p.cpu);
+  const memVals = points.map((p) => p.mem);
+  const tempVals = points.map((p) => p.temp);
+
+  drawChart(document.getElementById('histCpuChart'), cpuVals, { min: 0, max: 100 });
+  drawChart(document.getElementById('histMemChart'), memVals, { min: 0, max: 100 });
+  drawChart(document.getElementById('histTempChart'), tempVals, {
+    color: '#e8b339',
+    fillColor: 'rgba(232,179,57,0.15)',
+  });
+
+  renderLabels(document.getElementById('histCpuLabels'), points, range);
+  renderLabels(document.getElementById('histMemLabels'), points, range);
+  renderLabels(document.getElementById('histTempLabels'), points, range);
+
+  if (!points.length) {
+    ['histCpuLabels', 'histMemLabels', 'histTempLabels'].forEach((id) => {
+      document.getElementById(id).innerHTML = '<span>Chưa có dữ liệu cho khoảng thời gian này</span>';
+    });
+  }
+}
+
+document.querySelectorAll('.tab-btn').forEach((btn) => {
+  btn.addEventListener('click', () => {
+    document.querySelectorAll('.tab-btn').forEach((b) => b.classList.remove('active'));
+    btn.classList.add('active');
+    const tab = btn.dataset.tab;
+    document.getElementById('tab-live').hidden = tab !== 'live';
+    document.getElementById('tab-history').hidden = tab !== 'history';
+    historyTabVisible = tab === 'history';
+    if (historyTabVisible) loadHistory(currentRange);
+  });
+});
+
+document.querySelectorAll('.range-btn').forEach((btn) => {
+  btn.addEventListener('click', () => loadHistory(btn.dataset.range));
+});
+
+setInterval(() => {
+  if (historyTabVisible) loadHistory(currentRange);
+}, 60000);
 
 function connect() {
   const proto = location.protocol === 'https:' ? 'wss' : 'ws';
